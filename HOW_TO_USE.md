@@ -42,6 +42,8 @@ cd server && node server
 
 ## 使用方法
 
+### 打开[网页](http://localhost:5167/)
+
 ### 侧边栏
 
 - 顶端为洛谷标志，点击可跳转至洛谷主页。
