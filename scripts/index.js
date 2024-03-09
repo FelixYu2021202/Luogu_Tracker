@@ -75,6 +75,8 @@ function load_prob(main) {
 const pbs_type = ["p", "b", "cf", "at", "sp", "uva"];
 let pbs_data = {};
 
+let at_dict = {};
+
 let ac_data;
 
 const dif_col = [
@@ -86,15 +88,16 @@ const dif_col = [
     "#3498DB",
     "#9D3DCF",
     "#0E1D69"
-]
+];
 
 /**
- * @type {NodeJS.Dict<() => void>}
+ * @type {NodeJS.Dict<Function>}
  */
 let lpfuncs = {
     clear() {
         $("pbs-pg-select").empty();
         $("pbs-content").empty();
+        $("*[pbs-pg-sub-select]").detach();
     },
     p(page = Number(localStorage.getItem("pageP"))) {
         if (!page) {
@@ -110,7 +113,7 @@ let lpfuncs = {
         buts = buts.reverse();
         cp = page + 1;
         /**
-         * Every page there is 200 problems.
+         * Every page there are 200 problems.
          * +--> 10 problems
          * |
          * |
@@ -172,7 +175,7 @@ let lpfuncs = {
                     tr.appendTo(table);
                     tr = $("<tr></tr>");
                 }
-                $("<tr></tr>").appendTo(tr);
+                $("<td></td>").appendTo(tr);
             }
             if (cn % 10 == 0) {
                 tr.appendTo(table);
@@ -224,7 +227,7 @@ let lpfuncs = {
         buts = buts.reverse();
         cp = page + 1;
         /**
-         * Every page there is 200 problems.
+         * Every page there are 200 problems.
          * +--> 10 problems
          * |
          * |
@@ -292,7 +295,7 @@ let lpfuncs = {
                     tr.appendTo(table);
                     tr = $("<tr></tr>");
                 }
-                $("<tr></tr>").appendTo(tr);
+                $("<td></td>").appendTo(tr);
             }
             if (cn % 10 == 0) {
                 tr.appendTo(table);
@@ -338,7 +341,7 @@ let lpfuncs = {
         buts = buts.reverse();
         cp = page + 1;
         /**
-         * Every page there is 200 problems.
+         * Every page there are 200 problems.
          * +--> 10 problems
          * |
          * |
@@ -560,7 +563,7 @@ let lpfuncs = {
         buts = buts.reverse();
         cp = page + 1;
         /**
-         * Every page there is 20 contests
+         * Every page there are 20 contests
          * +-->  problems
          * |
          * |
@@ -683,6 +686,149 @@ let lpfuncs = {
             tr.appendTo(table);
         }
     },
+    contest_series(pid) {
+        pid = pid.substring(2);
+        if (pid[0] == '_') {
+            pid = pid.substring(1);
+        }
+        pid = pid.match(/[0-9a-zA-Z]+/)[0];
+        pid = pid.replace(/\d+$/, "");
+        let mat = pid.match(/[a-zA-Z]+(\d+[a-zA-Z]+)/);
+        if (mat) {
+            pid = pid.replace(mat[1], "");
+        }
+        return pid;
+    },
+    contest_id(pid) {
+        pid = pid.substring(2);
+        if (pid[0] == '_') {
+            pid = pid.substring(1);
+        }
+        if (pid.match(/_[0-9a-zA-Z]+$/)) {
+            return pid.match(/([0-9a-zA-Z_]+)_[0-9a-zA-Z]+$/)[1];
+        }
+        else {
+            return pid.replace(/\d+$/, "");
+        }
+    },
+    first(cont) {
+        return cont.match(/^\d/) ? "#" : cont[0];
+    },
+    at_cont(cont) {
+        localStorage.setItem("pageAT", cont);
+        let pbs = pbs_data.at;
+        let table = $("*[pbs-content]").empty();
+        let tr = null;
+        let cu = Number(localStorage.getItem("currentUser"));
+        for (let i = 0; i < pbs.length; i++) {
+            let { dif, pid, tit } = pbs[i];
+            let ser = lpfuncs.contest_series(pid);
+            let cid = lpfuncs.contest_id(pid);
+            if (ser != cont) {
+                continue;
+            }
+            if (i == 0) // it must be the start
+            {
+                tr = $(`
+                    <tr>
+                        <td pbs-pg-at-head>
+                            ${cid}
+                        </td>
+                    </tr>
+                `);
+            }
+            else {
+                let las = lpfuncs.contest_id(pbs[i - 1].pid);
+                if (las != cid) { // new line
+                    if (tr) {
+                        tr.appendTo(table);
+                    }
+                    tr = $(`
+                        <tr>
+                            <td pbs-pg-at-head>
+                                ${cid}
+                            </td>
+                        </tr>
+                    `);
+                }
+            }
+            if (tit.length > 50) {
+                tit = tit.slice(0, 47) + "...";
+            }
+            let sta = "";
+            if (ac_data[cu].accepted.find(p => p == pid)) {
+                sta = "pbs-ac";
+            }
+            if (ac_data[cu].submitted.find(p => p == pid)) {
+                sta = "pbs-sb";
+            }
+            $(`
+                <td ${sta}>
+                    <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
+                        <div style="color:${dif_col[dif]}" pbs-pid>
+                            ${pid}
+                        </div>
+                        <div pbs-tit>
+                            ${tit}
+                        </div>
+                    </a>
+                </td>
+            `).appendTo(tr);
+        }
+        if (tr) {
+            tr.appendTo(table);
+        }
+    },
+    at_subselect(cont) {
+        let subselect = $(`
+                <div pbs-pg-sub-select flex-wrap>
+                </div>
+            `);
+        subselect = subselect.appendTo($("*[pbs-pg-sub-select-container]").empty());
+        let sta = lpfuncs.first(cont);
+        for (let cs in at_dict) {
+            if (lpfuncs.first(cs) == sta) {
+                let cur;
+                if (cs == cont) {
+                    cur = $(`<div pbs-pg-cur>${cs}</div>`);
+                }
+                else {
+                    cur = $(`<div pbs-pg-but>${cs}</div>`);
+                    cur.on("click", () => {
+                        lpfuncs.at_cont(cs);
+                        lpfuncs.at_subselect(cs);
+                    });
+                }
+                cur.appendTo(subselect);
+            }
+        }
+    },
+    at_select(cont) {
+        let select = $("*[pbs-pg-select]").empty();
+        let alp = "#abcdefghijklmnopqrstuvwxyz";
+        for (let i = 0; i < 27; i++) {
+            let cur;
+            if (lpfuncs.first(cont) == alp[i]) {
+                cur = $(`<div pbs-pg-cur>${alp[i]}</div>`);
+            }
+            else {
+                cur = $(`<div pbs-pg-but>${alp[i]}</div>`);
+                cur.on("click", () => {
+                    lpfuncs.at_select(alp[i] + "_____");
+                });
+            }
+            cur.appendTo(select);
+        }
+        lpfuncs.at_subselect(cont);
+    },
+    at(cont = localStorage.getItem("pageAT")) {
+        if (!cont) {
+            cont = "abc";
+        }
+        localStorage.setItem("pageAT", cont);
+        lpfuncs.at_select(cont);
+        lpfuncs.at_cont(cont);
+    }
 }
 
 /**
@@ -729,6 +875,11 @@ $(() => {
     pbs_type.forEach(t => {
         $.get(`/${t}.json`, res => {
             pbs_data[t] = JSON.parse(res);
+            if (t == "at") {
+                pbs_data.at.forEach(p => {
+                    at_dict[lpfuncs.contest_series(p.pid)] = true;
+                });
+            }
         });
     });
     $.get("/accepts.json", res => {

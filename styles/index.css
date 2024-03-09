@@ -73,6 +73,11 @@
     height: 100%;
 }
 
+*[pbs-pg-at-head] {
+    font-weight: bold;
+    color: var(--pro-green);
+}
+
 *[pbs-pg-but] {
     border-radius: 0.5em;
     padding: 0.5em 0.5em;
@@ -86,7 +91,8 @@
     cursor: pointer;
 }
 
-*[pbs-pg-select] {
+*[pbs-pg-select],
+*[pbs-pg-sub-select] {
     border: 1px solid var(--main-bg);
     border-radius: 0.5em;
     padding: 0.5em 0.5em;
