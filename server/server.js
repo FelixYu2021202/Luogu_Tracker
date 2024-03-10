@@ -33,7 +33,7 @@ function load_api(an, res, query) {
  * @param {string} ctt 
  */
 function load_file(fn, res, fld, ctt) {
-    fs.readFile("../" + fld + fn, (err, data) => {
+    fs.readFile("./" + fld + fn, (err, data) => {
         if (err) {
             res.writeHead(500);
             return res.end(`Error: ${err.code}`);
@@ -51,7 +51,7 @@ function load_file(fn, res, fld, ctt) {
  * @param {http.ServerResponse<http.IncomingMessage> & {req: http.IncomingMessage}} res 
  */
 function load(req, res) {
-    fs.appendFile("../logs/server.log", `[${Date.now()}] ${req.url}\n`, () => {
+    fs.appendFile("./logs/server.log", `[${Date.now()}] ${req.url}\n`, () => {
         console.log(`[${Date.now()}] ${req.url}`);
     });
     const parsed = url.parse(req.url, true);
@@ -100,7 +100,7 @@ wss.on("connection", (ws, req) => {
 
     const parsed = url.parse(req.url, true);
     const type = parsed.query["type"];
-    fs.appendFile("../logs/server.log", `[${Date.now()}] WebSocket: ${type}\n`, () => {
+    fs.appendFile("./logs/server.log", `[${Date.now()}] WebSocket: ${type}\n`, () => {
         console.log(`[${Date.now()}] ${type}`);
     });
     switch (type) {

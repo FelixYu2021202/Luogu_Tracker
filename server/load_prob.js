@@ -72,7 +72,7 @@ function load_prob(type, ws) {
     fetch_page(type, 1, p => {
         data.push(p);
     }, () => {
-        fs.writeFile(`../data/${type}.json`, JSON.stringify(data), Object);
+        fs.writeFile(`./data/${type}.json`, JSON.stringify(data), Object);
     }, ws);
 }
 

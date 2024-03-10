@@ -9,7 +9,7 @@ const http = require("http");
  * @param {http.ServerResponse<http.IncomingMessage> & {req: http.IncomingMessage}} res 
  */
 function load_accept(uid, client, res) {
-    fs.readFile("../data/accepts.json", (err, buf) => {
+    fs.readFile("./data/accepts.json", (err, buf) => {
         let data = JSON.parse(buf.toString());
         fetch(`https://www.luogu.com.cn/user/${uid}#practice`, {
             "headers": {
@@ -46,7 +46,7 @@ function load_accept(uid, client, res) {
             dat.currentData.submittedProblems.forEach(p => {
                 data[uid].submitted.push(p.pid);
             });
-            fs.writeFile("../data/accepts.json", JSON.stringify(data), Object);
+            fs.writeFile("./data/accepts.json", JSON.stringify(data), Object);
             res.writeHead(200);
             res.end();
         }).catch(() => {
