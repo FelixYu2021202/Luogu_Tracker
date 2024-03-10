@@ -1,6 +1,6 @@
 # Luogu Tracker by cosf
 
-> Last update: 9/3/2024
+> Last update: 10/3/2024
 >
 > Author: cosf
 
@@ -12,7 +12,7 @@
 
 ### 1. 安装 Node.js
 
-[官网链接](https://nodejs.org/)
+[官网链接](https://nodejs.org/en/download/)
 
 ### 2. 安装库文件
 
@@ -27,7 +27,7 @@ npm install
 运行：
 
 ```powershell
-cd server && node server
+npm start
 ```
 
 ### 4. 查看日志
