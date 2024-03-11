@@ -915,6 +915,5 @@ $(() => {
             load_pbs(main)();
         });
     });
-    // $(load_pbs(main));
-    $(load_prob(main));
+    $(load_pbs(main));
 });
