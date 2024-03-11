@@ -34,12 +34,41 @@ function load_login(main) {
 }
 
 /**
+ * @type {(WebSocket & {type: string})[]}
+ */
+let wss = [];
+
+function registerWss() {
+    wss = wss.filter(ws => ws.readyState != ws.CLOSED);
+    let pbsc = $("*[pro-bars-cnt]").empty();
+    wss.forEach(ws => {
+        let pbc = $(`<div flex-wrap pro-bar-cnt></div>`).appendTo(pbsc);
+        let pb = $(`<div pro-bar>${ws.type}: 0%</div>`).appendTo(pbc);
+        ws.onmessage = ev => {
+            let dat = JSON.parse(ev.data);
+            let cl;
+            if (dat.success) {
+                cl = "var(--pro-green)";
+            }
+            else {
+                cl = "var(--pro-red)";
+            }
+            let pg = Math.round(1000 * dat.cur / dat.max) / 10;
+            pb.css("background", `rgba(0, 0, 0, 0) linear-gradient(to right, ${cl} ${pg}%, rgba(0, 0, 0, 0) ${pg}%) repeat scroll 0% 0% / auto border-box border-box`);
+            pb.text(`${ws.type}: ${Math.round(1000 * dat.cur / dat.max) / 10}%`);
+        }
+        ws.onclose = registerWss;
+    });
+}
+
+/**
  * 
  * @param {JQuery<HTMLElement>} main
  */
 function load_prob(main) {
     return function () {
         console.log("load prob");
+        registerWss();
         main.empty();
         main.removeAttr(main.attr("current-page"));
         main.attr("current-page", "lp-page");
@@ -47,27 +76,19 @@ function load_prob(main) {
         $.get("/lp.html", (data) => {
             let inner = $(data);
             inner.appendTo(main);
-            let pgb = $("*[pro-bar]");
+            registerWss();
             $("*[but]").off("");
             $("*[but]").on("click", () => {
                 console.log("爬取");
                 let type = $("*[selection]").val();
                 type.forEach(t => {
                     console.log(t);
-                    const ws = new WebSocket(`ws://localhost:51672?type=load_prob&body=${t}`);
-                    ws.onmessage = ev => {
-                        let dat = JSON.parse(ev.data);
-                        if (dat.success) {
-                            pgb.css("--pro-color", "var(--pro-green)");
-                        }
-                        else {
-                            pgb.css("--pro-color", "var(--pro-red)");
-                        }
-                        pgb.css("--progress", `${Math.round(1000 * dat.cur / dat.max) / 10}%`);
-                        pgb.text(`${Math.round(1000 * dat.cur / dat.max) / 10}%`);
-                    }
+                    let ws = new WebSocket(`ws://localhost:51672?type=load_prob&body=${t}`);
+                    ws.type = t;
+                    wss.push(ws);
+                    registerWss();
                 });
-            })
+            });
         });
     }
 }
@@ -894,5 +915,6 @@ $(() => {
             load_pbs(main)();
         });
     });
-    $(load_pbs(main));
+    // $(load_pbs(main));
+    $(load_prob(main));
 });

@@ -48,6 +48,7 @@ function fetch_page(type, pg, cb, fn, ws) {
                 }, 1000);
             }
             else {
+                ws.close();
                 fn();
             }
         }).catch(() => {

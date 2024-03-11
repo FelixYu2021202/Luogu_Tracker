@@ -116,11 +116,11 @@
     height: 2em;
     border: 1px solid var(--main-brd);
     border-radius: 1em;
-    background: linear-gradient(to right, var(--pro-color) var(--progress), rgba(0, 0, 0, 0) var(--progress)) border-box border-box;
+    background: linear-gradient(to right, var(--pro-color) 0%, rgba(0, 0, 0, 0) 0%) border-box border-box;
     text-align: center;
     line-height: 2em;
     --pro-color: var(--pro-green);
-    --progress: 0%;
+    margin-top: 1em;
 }
 
 *[query] {

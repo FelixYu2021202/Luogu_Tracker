@@ -1,6 +1,6 @@
 # Luogu Tracker by cosf
 
-> Last update: 10/3/2024
+> Last update: 11/3/2024
 >
 > Author: cosf
 
@@ -56,7 +56,6 @@ npm start
 
 - 中间有对应 OJ 的按钮，选择以爬取对应题目。
 - 按“爬取”按钮开始爬取题目。
-- 如果重复爬取同一种题目，可能会导致爬取失败。
 
 ### 登陆界面
 
