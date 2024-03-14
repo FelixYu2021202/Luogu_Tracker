@@ -34,7 +34,7 @@ function load_login(main) {
 }
 
 /**
- * @type {(WebSocket & {type: string})[]}
+ * @type {(WebSocket & {type: string; progress: number})[]}
  */
 let wss = [];
 
@@ -43,7 +43,8 @@ function registerWss() {
     let pbsc = $("*[pro-bars-cnt]").empty();
     wss.forEach(ws => {
         let pbc = $(`<div flex-wrap pro-bar-cnt></div>`).appendTo(pbsc);
-        let pb = $(`<div pro-bar>${ws.type}: 0%</div>`).appendTo(pbc);
+        let pb = $(`<div pro-bar>${ws.type}: ${ws.progress}%</div>`).appendTo(pbc);
+        pb.css("background", `rgba(0, 0, 0, 0) linear-gradient(to right, var(--pro-green) ${ws.progress}%, rgba(0, 0, 0, 0) ${ws.progress}%) repeat scroll 0% 0% / auto border-box border-box`);
         ws.onmessage = ev => {
             let dat = JSON.parse(ev.data);
             let cl;
@@ -53,9 +54,9 @@ function registerWss() {
             else {
                 cl = "var(--pro-red)";
             }
-            let pg = Math.round(1000 * dat.cur / dat.max) / 10;
-            pb.css("background", `rgba(0, 0, 0, 0) linear-gradient(to right, ${cl} ${pg}%, rgba(0, 0, 0, 0) ${pg}%) repeat scroll 0% 0% / auto border-box border-box`);
-            pb.text(`${ws.type}: ${Math.round(1000 * dat.cur / dat.max) / 10}%`);
+            ws.progress = Math.round(1000 * dat.cur / dat.max) / 10;
+            pb.css("background", `rgba(0, 0, 0, 0) linear-gradient(to right, ${cl} ${ws.progress}%, rgba(0, 0, 0, 0) ${ws.progress}%) repeat scroll 0% 0% / auto border-box border-box`);
+            pb.text(`${ws.type}: ${ws.progress}%`);
         }
         ws.onclose = registerWss;
     });
@@ -85,6 +86,7 @@ function load_prob(main) {
                     console.log(t);
                     let ws = new WebSocket(`ws://localhost:51672?type=load_prob&body=${t}`);
                     ws.type = t;
+                    ws.progress = 0;
                     wss.push(ws);
                     registerWss();
                 });
