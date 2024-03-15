@@ -854,6 +854,23 @@ let lpfuncs = {
     }
 }
 
+class Counter {
+    /**
+     * @param {()=>void} cb 
+     * @param {number} cnt 
+     */
+    constructor(cb, cnt) {
+        this.cb = cb;
+        this.cnt = cnt;
+    }
+    count() {
+        this.cnt--;
+        if (!this.cnt) {
+            this.cb();
+        }
+    }
+}
+
 /**
  * 
  * @param {JQuery<HTMLElement>} main
@@ -895,9 +912,11 @@ $(() => {
         localStorage.setItem("currentUser", 1);
     }
     let main = $("main");
+    let counter = new Counter(load_pbs(main), 7);
     pbs_type.forEach(t => {
         $.get(`/${t}.json`, res => {
             pbs_data[t] = JSON.parse(res);
+            counter.count();
             if (t == "at") {
                 pbs_data.at.forEach(p => {
                     at_dict[lpfuncs.contest_series(p.pid)] = true;
@@ -907,6 +926,7 @@ $(() => {
     });
     $.get("/accepts.json", res => {
         ac_data = JSON.parse(res);
+        counter.count();
     });
     $("*[side-login]").on("click", load_login(main));
     $("*[side-update]").on("click", load_prob(main));
@@ -917,5 +937,4 @@ $(() => {
             load_pbs(main)();
         });
     });
-    $(load_pbs(main));
 });
