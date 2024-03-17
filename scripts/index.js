@@ -113,24 +113,51 @@ const dif_col = [
     "#0E1D69"
 ];
 
-/**
- * @type {NodeJS.Dict<Function>}
- */
 let lpfuncs = {
     clear() {
         $("pbs-pg-select").empty();
         $("pbs-content").empty();
         $("*[pbs-pg-sub-select]").detach();
     },
-    p(page = Number(localStorage.getItem("pageP"))) {
+    /**
+     * 
+     * @param {string} sta 
+     * @param {string} pid 
+     * @param {string} tit 
+     * @param {number} dif 
+     */
+    rp(sta, pid, tit, dif) {
+        return $(`
+            <td ${sta}>
+                <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
+                    <div style="color:${dif_col[dif]}" pbs-pid>
+                        ${pid}
+                    </div>
+                    <div pbs-tit>
+                        ${tit}
+                    </div>
+                </a>
+            </td>
+        `);
+    },
+    /**
+     * 
+     * @param {string} t 
+     * @param {number} page 
+     * @param {number} st 
+     * @param {number[]} dis 
+     */
+    default(t, page, st, dis) {
         if (!page) {
             page = 1;
         }
-        localStorage.setItem("pageP", page);
+        localStorage.setItem(`page${t.toUpperCase()}`, page);
         let buts = [];
         let cp = page;
         for (let dif = 1; cp > 1; cp -= dif, dif *= 2) {
-            buts.push(cp);
+            if (!dis.find(p => p == cp)) {
+                buts.push(cp);
+            }
         }
         buts.push(1);
         buts = buts.reverse();
@@ -143,8 +170,8 @@ let lpfuncs = {
          * V
          * 20 problems
          */
-        let pbs = pbs_data.p;
-        let mxp = Math.ceil((Number(pbs[pbs.length - 1].pid.substring(1)) + 1 - 1000) / 200); // max page
+        let pbs = pbs_data[t];
+        let mxp = Math.ceil((Number(pbs[pbs.length - 1].pid.substring(t.length)) + 1 - st) / 200); // max page
         for (let dif = 2; cp < mxp; cp += dif, dif *= 2) {
             buts.push(cp);
         }
@@ -161,7 +188,7 @@ let lpfuncs = {
             else {
                 cur = $(`<div pbs-pg-but>${p}</div>`);
                 cur.on("click", () => {
-                    lpfuncs.p(p);
+                    lpfuncs[t](p);
                 });
             }
             cur.appendTo(select);
@@ -179,15 +206,15 @@ let lpfuncs = {
          * problems: P(1000 + (x-1) * 200) to P(1000 + x * 200 - 1)
          */
         let cu = Number(localStorage.getItem("currentUser"));
-        let las = 999 + (page - 1) * 200;
+        let las = st - 1 + (page - 1) * 200;
         let tr = $("<tr></tr>");
         for (let i = 0; i < pbs.length; i++) {
             let { dif, pid, tit } = pbs[i];
-            let cn = Number(pid.substring(1));
+            let cn = Number(pid.substring(t.length));
             if (cn <= las) {
                 continue;
             }
-            if (cn > 999 + page * 200) {
+            if (cn > st - 1 + page * 200) {
                 break;
             }
             /**
@@ -214,363 +241,26 @@ let lpfuncs = {
             if (ac_data[cu].submitted.find(p => p == pid)) {
                 sta = "pbs-sb";
             }
-            $(`
-                <td ${sta}>
-                    <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                        <div style="color:${dif_col[dif]}" pbs-pid>
-                            ${pid}
-                        </div>
-                        <div pbs-tit>
-                            ${tit}
-                        </div>
-                    </a>
-                </td>
-            `).appendTo(tr);
+            lpfuncs.rp(sta, pid, tit, dif).appendTo(tr);
             las = cn;
         }
         tr.appendTo(table);
+    },
+    p(page = Number(localStorage.getItem("pageP"))) {
+        lpfuncs.default("p", page, 1000, []);
     },
     b(page = Number(localStorage.getItem("pageB"))) {
-        if (!page) {
-            page = 1;
-        }
-        localStorage.setItem("pageB", page);
-        let buts = [];
-        let cp = page;
-        for (let dif = 1; cp > 1; cp -= dif, dif *= 2) {
-            if (cp == 2 || cp == 3) {
-                continue;
-            }
-            if (cp > 4 && cp < 9) {
-                continue;
-            }
-            buts.push(cp);
-        }
-        buts.push(1);
-        buts = buts.reverse();
-        cp = page + 1;
-        /**
-         * Every page there are 200 problems.
-         * +--> 10 problems
-         * |
-         * |
-         * V
-         * 20 problems
-         */
-        let pbs = pbs_data.b;
-        let mxp = Math.ceil((Number(pbs[pbs.length - 1].pid.substring(1)) + 1 - 2000) / 200); // max page
-        for (let dif = 2; cp < mxp; cp += dif, dif *= 2) {
-            if (cp == 2 || cp == 3) {
-                continue;
-            }
-            if (cp > 4 && cp < 9) {
-                continue;
-            }
-            buts.push(cp);
-        }
-        if (page != mxp) {
-            buts.push(mxp);
-        }
-        let select = $("*[pbs-pg-select]");
-        select.empty();
-        buts.forEach(p => {
-            let cur;
-            if (p == page) {
-                cur = $(`<div pbs-pg-cur>${p}</div>`);
-            }
-            else {
-                cur = $(`<div pbs-pg-but>${p}</div>`);
-                cur.on("click", () => {
-                    lpfuncs.b(p);
-                });
-            }
-            cur.appendTo(select);
-        });
-        let table = $("*[pbs-content]");
-        table.empty();
-        let head = $("<tr pbs-head></tr>");
-        for (let i = 0; i < 10; i++) {
-            let td = $(`<td>${i}</td>`);
-            td.appendTo(head);
-        }
-        head.appendTo(table);
-        /**
-         * For example: x-th page
-         * problems: P(2000 + (x-1) * 200) to P(2000 + x * 200 - 1)
-         */
-        let cu = Number(localStorage.getItem("currentUser"));
-        let las = 1999 + (page - 1) * 200;
-        let tr = $("<tr></tr>");
-        for (let i = 0; i < pbs.length; i++) {
-            let { dif, pid, tit } = pbs[i];
-            let cn = Number(pid.substring(1));
-            if (cn <= las) {
-                continue;
-            }
-            if (cn > 1999 + page * 200) {
-                break;
-            }
-            /**
-             * render blanks from las + 1 to cn - 1
-             */
-            for (let j = las + 1; j < cn; j++) {
-                if (j % 10 == 0) {
-                    tr.appendTo(table);
-                    tr = $("<tr></tr>");
-                }
-                $("<td></td>").appendTo(tr);
-            }
-            if (cn % 10 == 0) {
-                tr.appendTo(table);
-                tr = $("<tr></tr>");
-            }
-            if (tit.length > 50) {
-                tit = tit.slice(0, 47) + "...";
-            }
-            let sta = "";
-            if (ac_data[cu].accepted.find(p => p == pid)) {
-                sta = "pbs-ac";
-            }
-            if (ac_data[cu].submitted.find(p => p == pid)) {
-                sta = "pbs-sb";
-            }
-            $(`
-                <td ${sta}>
-                    <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                        <div style="color:${dif_col[dif]}" pbs-pid>
-                            ${pid}
-                        </div>
-                        <div pbs-tit>
-                            ${tit}
-                        </div>
-                    </a>
-                </td>
-            `).appendTo(tr);
-            las = cn;
-        }
-        tr.appendTo(table);
+        lpfuncs.default("b", page, 2000, [2, 3, 5, 6, 7, 8]);
     },
     sp(page = Number(localStorage.getItem("pageSP"))) {
-        if (!page) {
-            page = 1;
-        }
-        localStorage.setItem("pageSP", page);
-        let buts = [];
-        let cp = page;
-        for (let dif = 1; cp > 1; cp -= dif, dif *= 2) {
-            buts.push(cp);
-        }
-        buts.push(1);
-        buts = buts.reverse();
-        cp = page + 1;
-        /**
-         * Every page there are 200 problems.
-         * +--> 10 problems
-         * |
-         * |
-         * V
-         * 20 problems
-         */
-        let pbs = pbs_data.sp;
-        let mxp = Math.ceil((Number(pbs[pbs.length - 1].pid.substring(2)) + 1) / 200); // max page
-        for (let dif = 2; cp < mxp; cp += dif, dif *= 2) {
-            buts.push(cp);
-        }
-        if (page != mxp) {
-            buts.push(mxp);
-        }
-        let select = $("*[pbs-pg-select]");
-        select.empty();
-        buts.forEach(p => {
-            let cur;
-            if (p == page) {
-                cur = $(`<div pbs-pg-cur>${p}</div>`);
-            }
-            else {
-                cur = $(`<div pbs-pg-but>${p}</div>`);
-                cur.on("click", () => {
-                    lpfuncs.sp(p);
-                });
-            }
-            cur.appendTo(select);
-        });
-        let table = $("*[pbs-content]");
-        table.empty();
-        let head = $("<tr pbs-head></tr>");
-        for (let i = 0; i < 10; i++) {
-            let td = $(`<td>${i}</td>`);
-            td.appendTo(head);
-        }
-        head.appendTo(table);
-        /**
-         * For example: x-th page
-         * problems: P((x-1) * 200) to P(x * 200 - 1)
-         */
-        let cu = Number(localStorage.getItem("currentUser"));
-        let las = (page - 1) * 200 - 1;
-        let tr = $("<tr></tr>");
-        for (let i = 0; i < pbs.length; i++) {
-            let { dif, pid, tit } = pbs[i];
-            let cn = Number(pid.substring(2));
-            if (cn <= las) {
-                continue;
-            }
-            if (cn > page * 200 - 1) {
-                break;
-            }
-            /**
-             * render blanks from las + 1 to cn - 1
-             */
-            for (let j = las + 1; j < cn; j++) {
-                if (j % 10 == 0) {
-                    tr.appendTo(table);
-                    tr = $("<tr></tr>");
-                }
-                $("<td></td>").appendTo(tr);
-            }
-            if (cn % 10 == 0) {
-                tr.appendTo(table);
-                tr = $("<tr></tr>");
-            }
-            if (tit.length > 50) {
-                tit = tit.slice(0, 47) + "...";
-            }
-            let sta = "";
-            if (ac_data[cu].accepted.find(p => p == pid)) {
-                sta = "pbs-ac";
-            }
-            if (ac_data[cu].submitted.find(p => p == pid)) {
-                sta = "pbs-sb";
-            }
-            $(`
-                <td ${sta}>
-                    <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                        <div style="color:${dif_col[dif]}" pbs-pid>
-                            ${pid}
-                        </div>
-                        <div pbs-tit>
-                            ${tit}
-                        </div>
-                    </a>
-                </td>
-            `).appendTo(tr);
-            las = cn;
-        }
-        tr.appendTo(table);
+        lpfuncs.default("sp", page, 0, []);
     },
     uva(page = Number(localStorage.getItem("pageUVA"))) {
-        if (!page) {
-            page = 1;
+        let dis = [];
+        for (let i = 10; i < 50; i++) {
+            dis.push(i);
         }
-        localStorage.setItem("pageUVA", page);
-        let buts = [];
-        let cp = page;
-        for (let dif = 1; cp > 1; cp -= dif, dif *= 2) {
-            if (cp > 9 && cp < 50) {
-                continue;
-            }
-            buts.push(cp);
-        }
-        buts.push(1);
-        buts = buts.reverse();
-        cp = page + 1;
-        /**
-         * Every page there is 200 problems.
-         * +--> 10 problems
-         * |
-         * |
-         * V
-         * 20 problems
-         */
-        let pbs = pbs_data.uva;
-        let mxp = Math.ceil((Number(pbs[pbs.length - 1].pid.substring(3)) - 99) / 200); // max page
-        for (let dif = 2; cp < mxp; cp += dif, dif *= 2) {
-            if (cp > 9 && cp < 50) {
-                continue;
-            }
-            buts.push(cp);
-        }
-        if (page != mxp) {
-            buts.push(mxp);
-        }
-        let select = $("*[pbs-pg-select]");
-        select.empty();
-        buts.forEach(p => {
-            let cur;
-            if (p == page) {
-                cur = $(`<div pbs-pg-cur>${p}</div>`);
-            }
-            else {
-                cur = $(`<div pbs-pg-but>${p}</div>`);
-                cur.on("click", () => {
-                    lpfuncs.uva(p);
-                });
-            }
-            cur.appendTo(select);
-        });
-        let table = $("*[pbs-content]");
-        table.empty();
-        let head = $("<tr pbs-head></tr>");
-        for (let i = 0; i < 10; i++) {
-            let td = $(`<td>${i}</td>`);
-            td.appendTo(head);
-        }
-        head.appendTo(table);
-        /**
-         * For example: x-th page
-         * problems: P((x-1) * 200) to P(x * 200 - 1)
-         */
-        let cu = Number(localStorage.getItem("currentUser"));
-        let las = (page - 1) * 200 + 99;
-        let tr = $("<tr></tr>");
-        for (let i = 0; i < pbs.length; i++) {
-            let { dif, pid, tit } = pbs[i];
-            let cn = Number(pid.substring(3));
-            if (cn <= las) {
-                continue;
-            }
-            if (cn > page * 200 + 99) {
-                break;
-            }
-            /**
-             * render blanks from las + 1 to cn - 1
-             */
-            for (let j = las + 1; j < cn; j++) {
-                if (j % 10 == 0) {
-                    tr.appendTo(table);
-                    tr = $("<tr></tr>");
-                }
-                $("<td></td>").appendTo(tr);
-            }
-            if (cn % 10 == 0) {
-                tr.appendTo(table);
-                tr = $("<tr></tr>");
-            }
-            if (tit.length > 50) {
-                tit = tit.slice(0, 47) + "...";
-            }
-            let sta = "";
-            if (ac_data[cu].accepted.find(p => p == pid)) {
-                sta = "pbs-ac";
-            }
-            if (ac_data[cu].submitted.find(p => p == pid)) {
-                sta = "pbs-sb";
-            }
-            $(`
-                <td ${sta}>
-                    <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                        <div style="color:${dif_col[dif]}" pbs-pid>
-                            ${pid}
-                        </div>
-                        <div pbs-tit>
-                            ${tit}
-                        </div>
-                    </a>
-                </td>
-            `).appendTo(tr);
-            las = cn;
-        }
-        tr.appendTo(table);
+        lpfuncs.default("uva", page, 100, dis);
     },
     cf(page = Number(localStorage.getItem("pageCF"))) {
         if (!page) {
@@ -663,18 +353,7 @@ let lpfuncs = {
                     if (ac_data[cu].submitted.find(p => p == pid)) {
                         sta = "pbs-sb";
                     }
-                    $(`
-                        <td ${sta}>
-                            <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                                <div style="color:${dif_col[dif]}" pbs-pid>
-                                    ${pid}
-                                </div>
-                                <div pbs-tit>
-                                    ${tit}
-                                </div>
-                            </a>
-                        </td>
-                    `).appendTo(tr);
+                    lpfuncs.rp(sta, pid, tit, dif).appendTo(tr);
                 }
                 else {
                     let td = $("<td></td>");
@@ -690,18 +369,7 @@ let lpfuncs = {
                         if (ac_data[cu].submitted.find(p => p == pid)) {
                             sta = "pbs-sb";
                         }
-                        $(`
-                            <div ${sta}>
-                                <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                                    <div style="color:${dif_col[dif]}" pbs-pid>
-                                        ${pid}
-                                    </div>
-                                    <div pbs-tit>
-                                        ${tit}
-                                    </div>
-                                </a>
-                            </div>
-                        `).appendTo(td);
+                        lpfuncs.rp(sta, pid, tit, dif).appendTo(td);
                     });
                     td.appendTo(tr);
                 }
@@ -785,18 +453,7 @@ let lpfuncs = {
             if (ac_data[cu].submitted.find(p => p == pid)) {
                 sta = "pbs-sb";
             }
-            $(`
-                <td ${sta}>
-                    <a href="https://www.luogu.com.cn/problem/${pid}" target="_blank" pbs-link>
-                        <div style="color:${dif_col[dif]}" pbs-pid>
-                            ${pid}
-                        </div>
-                        <div pbs-tit>
-                            ${tit}
-                        </div>
-                    </a>
-                </td>
-            `).appendTo(tr);
+            lpfuncs.rp(sta, pid, tit, dif).appendTo(tr);
         }
         if (tr) {
             tr.appendTo(table);
