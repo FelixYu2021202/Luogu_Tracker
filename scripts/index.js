@@ -2,6 +2,8 @@ if (typeof $ == "undefined") {
     $ = require("jquery");
 }
 
+let config;
+
 /**
  * 
  * @param {JQuery<HTMLElement>} main
@@ -84,7 +86,7 @@ function load_prob(main) {
                 let type = $("*[selection]").val();
                 type.forEach(t => {
                     console.log(t);
-                    let ws = new WebSocket(`ws://localhost:51672?type=load_prob&body=${t}`);
+                    let ws = new WebSocket(`ws://localhost:${config.socketPort}?type=load_prob&body=${t}`);
                     ws.type = t;
                     ws.progress = 0;
                     wss.push(ws);
@@ -569,7 +571,7 @@ $(() => {
         localStorage.setItem("currentUser", 1);
     }
     let main = $("main");
-    let counter = new Counter(load_pbs(main), 7);
+    let counter = new Counter(load_pbs(main), 8);
     pbs_type.forEach(t => {
         $.get(`/${t}.json`, res => {
             pbs_data[t] = JSON.parse(res);
@@ -583,6 +585,10 @@ $(() => {
     });
     $.get("/accepts.json", res => {
         ac_data = JSON.parse(res);
+        counter.count();
+    });
+    $.get("/ports.json", res => {
+        config = JSON.parse(res);
         counter.count();
     });
     $("*[side-login]").on("click", load_login(main));

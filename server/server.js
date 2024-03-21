@@ -4,8 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const WebSocket = require("ws");
 
-const host = "localhost";
-const port = 5167;
+const config = JSON.parse(fs.readFileSync("./data/ports.json", "utf8"));
+
+const host = config.ip;
+const port = config.serverPort;
 
 const scripts = {
     load_accept: require("./load_accept"),
@@ -89,7 +91,7 @@ server.listen(port, host, () => {
     console.log(`Server running at http://${host}:${port}/`);
 });
 
-const ws_port = 51672;
+const ws_port = config.socketPort;
 
 const wss = new WebSocket.Server({ port: ws_port });
 
