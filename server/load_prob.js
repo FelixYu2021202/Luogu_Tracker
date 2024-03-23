@@ -21,7 +21,6 @@ function fetch_page(type, pg, cb, fn, ws) {
     fetch(`https://www.luogu.com.cn/problem/list?type=${type.toUpperCase()}&page=${pg}`)
         .then(p => p.text())
         .then(p => {
-            // console.log(`https://www.luogu.com.cn/problem/list?type=${type.toUpperCase()}&page=${pg}`);
             const $ = cheerio.load(p);
             let sc = $("script")[0].children[0].data;
             let fq = sc.indexOf('"');
