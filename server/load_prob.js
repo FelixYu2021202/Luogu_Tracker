@@ -17,6 +17,7 @@ const WebSocket = require("ws");
  * @param {WebSocket} ws 
  */
 function fetch_page(type, pg, cb, fn, ws) {
+    let mxp;
     fetch(`https://www.luogu.com.cn/problem/list?type=${type.toUpperCase()}&page=${pg}`)
         .then(p => p.text())
         .then(p => {
@@ -35,7 +36,7 @@ function fetch_page(type, pg, cb, fn, ws) {
                     tit: pb.title
                 });
             });
-            let mxp = Math.ceil(dat.currentData.problems.count / dat.currentData.problems.perPage);
+            mxp = Math.ceil(dat.currentData.problems.count / dat.currentData.problems.perPage);
             console.log(type, mxp, pg);
             ws.send(JSON.stringify({
                 max: mxp,
