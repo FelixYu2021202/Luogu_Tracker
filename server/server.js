@@ -54,7 +54,8 @@ function load_file(fn, res, fld, ctt) {
  */
 function load(req, res) {
     fs.appendFile("./logs/server.log", `[${Date.now()}] ${req.url}\n`, () => {
-        console.log(`[${Date.now()}] ${req.url}`);
+        let url = req.url.replace(/client=\w+/, "client=***");
+        console.log(`[${Date.now()}] ${url}`);
     });
     const parsed = url.parse(req.url, true);
     const filePath = parsed.pathname == "/" ? "/index.html" : parsed.pathname;

@@ -86,7 +86,7 @@ function load_prob(main) {
                 let type = $("*[selection]").val();
                 type.forEach(t => {
                     console.log(t);
-                    let ws = new WebSocket(`ws://localhost:${config.socketPort}?type=load_prob&body=${t}`);
+                    let ws = new WebSocket(`ws://${config.ip}:${config.socketPort}?type=load_prob&body=${t}`);
                     ws.type = t;
                     ws.progress = 0;
                     wss.push(ws);
@@ -549,6 +549,7 @@ function load_pbs(main) {
             $("*[rb-ch]").off();
             $("*[rb-ch]").on("click", () => {
                 localStorage.setItem("currentUser", usr.val());
+                lpfuncs[localStorage.getItem("currentPbs")]();
             });
             pbs_type.forEach(t => {
                 $(`*[rb-${t}]`).off();
