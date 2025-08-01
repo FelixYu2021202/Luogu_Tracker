@@ -22,11 +22,9 @@ function fetch_page(type, pg, cb, fn, ws) {
         .then(p => p.text())
         .then(p => {
             const $ = cheerio.load(p);
-            let sc = $("script")[0].children[0].data;
-            let fq = sc.indexOf('"');
-            let sq = sc.indexOf('"', fq + 1);
-            let dat = JSON.parse(decodeURIComponent(sc.substring(fq + 1, sq)));
-            let ps = dat.currentData.problems.result;
+            let sc = $("script")[1].children[0].data;
+            let dat = JSON.parse(sc);
+            let ps = dat.data.problems.result;
             ps.forEach(pb => {
                 cb({
                     pid: pb.pid,
@@ -35,7 +33,7 @@ function fetch_page(type, pg, cb, fn, ws) {
                     tit: pb.title
                 });
             });
-            mxp = Math.ceil(dat.currentData.problems.count / dat.currentData.problems.perPage);
+            mxp = Math.ceil(dat.data.problems.count / dat.data.problems.perPage);
             console.log(type, mxp, pg);
             ws.send(JSON.stringify({
                 max: mxp,
@@ -51,14 +49,14 @@ function fetch_page(type, pg, cb, fn, ws) {
                 ws.close();
                 fn();
             }
-        }).catch(() => {
+        }).catch((e) => {
             ws.send(JSON.stringify({
                 max: mxp,
                 cur: pg,
                 success: false
             }));
             setTimeout(() => {
-                fetch_page(type, pg, cb, fn, res);
+                fetch_page(type, pg, cb, fn, ws);
             }, 300000);
         });
 }
