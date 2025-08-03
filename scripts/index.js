@@ -12,9 +12,7 @@ function load_login(main) {
     return function () {
         console.log("login");
         main.empty();
-        main.removeAttr(main.attr("current-page"));
         main.attr("current-page", "login-page");
-        main.attr("page");
         $.get("/login.html", (data) => {
             let inner = $(data);
             inner.appendTo(main);
@@ -73,9 +71,7 @@ function load_prob(main) {
         console.log("load prob");
         registerWss();
         main.empty();
-        main.removeAttr(main.attr("current-page"));
         main.attr("current-page", "lp-page");
-        main.attr("lp-page");
         $.get("/lp.html", (data) => {
             let inner = $(data);
             inner.appendTo(main);
@@ -98,7 +94,15 @@ function load_prob(main) {
 }
 
 const pbs_type = ["p", "b", "cf", "at", "sp", "uva"];
+/**
+ * @type {{[key : string]: {pid: string, dif: number, tags: number[], tit: string}[]}}
+ */
 let pbs_data = {};
+
+/**
+ * @type {{[key : string]: {[key: string]: {pid: string, dif: number, tags: number[], tit: string}}}}
+ */
+let pbs_map = {};
 
 let at_dict = {};
 
@@ -538,9 +542,7 @@ function load_pbs(main) {
     return function () {
         console.log("problemset");
         main.empty();
-        main.removeAttr(main.attr("current-page"));
         main.attr("current-page", "problemset");
-        main.attr("problemset");
         $.get("/pbs.html", (data) => {
             let inner = $(data);
             inner.appendTo(main);
@@ -567,6 +569,465 @@ function load_pbs(main) {
     }
 }
 
+/**
+ * @typedef {{pid: string, comment: string}} TrainingProblem
+ * @typedef {{name: string, date: string, source: string, notes: string, comment: string, problems: TrainingProblem[]}} Training
+ */
+let trainingfuncs = {
+    /**
+     * @type {JQuery<HTMLDivElement>}
+     */
+    listdiv: null,
+    /**
+     * @type {JQuery<HTMLDivElement>}
+     */
+    viewdiv: null,
+    /**
+     * @type {Training[]}
+     */
+    trainings: null,
+    /**
+     * @param {string} pid 
+     */
+    check_prob(pid) {
+        for (let ps of pbs_type) {
+            if (pid.startsWith(ps.toUpperCase())) {
+                return pbs_map[ps][pid] != null;
+            }
+        }
+        return false;
+    },
+    get_prob(pid) {
+        for (let ps of pbs_type) {
+            if (pid.startsWith(ps.toUpperCase())) {
+                return pbs_map[ps][pid];
+            }
+        }
+        return null;
+    },
+    /**
+     * @param {string} s
+     */
+    check_training(s) {
+        try {
+            /**
+             * @type {Training []}
+             */
+            let tr = JSON.parse(s);
+            if (tr.constructor != Array) {
+                return null;
+            }
+            let ok = true;
+            tr.forEach(tra => {
+                ["name", "date", "source", "comment", "notes"].forEach(v => {
+                    if (typeof tra[v] != "string") {
+                        ok = false;
+                    }
+                });
+                if (tra.problems.constructor != Array) {
+                    ok = false;
+                } else {
+                    tra.problems.forEach(pb => {
+                        if (typeof pb.pid != "string" || !trainingfuncs.check_prob(pb.pid)) {
+                            ok = false;
+                        }
+                        if (typeof pb.comment != "string") {
+                            ok = false;
+                        }
+                    });
+                }
+            });
+            return ok ? tr : null;
+        } catch (e) {
+            return null;
+        }
+    },
+    clear_div() {
+        $("#training-view-area").children().remove();
+        trainingfuncs.listdiv.children().children().children().not(":first").remove();
+        trainingfuncs.viewdiv.attr("training-hide", "");
+        trainingfuncs.listdiv.attr("training-hide", "");
+    },
+    load_list() {
+        trainingfuncs.clear_div(trainingfuncs.listdiv, trainingfuncs.viewdiv);
+        trainingfuncs.listdiv.removeAttr("training-hide");
+        let table = trainingfuncs.listdiv.children().first();
+        trainingfuncs.trainings.forEach((training, idx) => {
+            let trainingtr = $(`
+                <tr>
+                <td>${training.date}</td>
+                <td>${training.name}</td>
+                <td>${training.source}</td>
+                <td>${training.notes}</td>
+                <td>${training.problems.length}</td>
+                <td></td>
+                </tr>`).appendTo(table);
+            let tcl = trainingtr.children().last();
+            let viewbut = $(`<button training-list-view>查看题单</button>`);
+            viewbut.appendTo(tcl);
+            $(`<span style="width: 1em; display: inline-block;"></span>`).insertAfter(viewbut);
+            let deletebut = $(`<button training-delete>删除题单</button>`);
+            deletebut.appendTo(tcl);
+            $(`<span style="width: 1em; display: inline-block;"></span>`).insertAfter(deletebut);
+            let downloadbut = $(`<button training-download>获取下载链接</button>`);
+            downloadbut.appendTo(tcl);
+            viewbut.on("click", () => {
+                trainingfuncs.load_view(idx);
+            });
+            deletebut.on("click", () => {
+                let res = true;
+                let texts = [
+                    "你确定要删除这个题单吗？(1/3)",
+                    "删除后无法找回哦！真的没有办法！(2/3)",
+                    "最后再确认一遍，以免你误触两次。你将永远失去这个题单！(3/3)"
+                ];
+                for (let i = 0; i < 3; i++) {
+                    if (!confirm(texts[i])) {
+                        res = false;
+                        break;
+                    }
+                }
+                if (res) {
+                    trainingfuncs.trainings.splice(idx, 1);
+                    localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
+                    trainingfuncs.load_list();
+                }
+            });
+            downloadbut.on("click", () => {
+                let blob = new Blob([JSON.stringify([training])], {
+                    type: "application/json"
+                });
+                let url = URL.createObjectURL(blob);
+                downloadbut.hide();
+                let a = $(`<a target="_blank" href="${url}" training-download download="LTTraining_${training.name.replaceAll('"', '""')}-By-${training.source.replaceAll('"', '""')}_${training.date.replaceAll('"', '""')}.json">下载链接</a>`).appendTo(tcl);
+                a.on("click", () => {
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        downloadbut.show();
+                        a.remove();
+                    }, 500);
+                });
+            });
+        });
+        let createtr = $(`
+                <tr>
+                <td>创建题单</td>
+                <td><input id="create-training-name" inline-input></td>
+                <td><input id="create-training-source" value="none" inline-input></td>
+                <td><input id="create-training-notes" inline-input></td>
+                <td></td>
+                <td></td>
+                </tr>`).appendTo(table);
+        let createbut = $(`<button training-download>创建题单</button>`).appendTo(createtr.children().last());
+        createbut.on("click", () => {
+            let now = new Date();
+            trainingfuncs.trainings.push({
+                name: $("#create-training-name").val(),
+                date: `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`,
+                source: $("#create-training-source").val(),
+                comment: "",
+                notes: $("#create-training-notes").val(),
+                problems: []
+            });
+            localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
+            trainingfuncs.load_list();
+        });
+        let ootr = $(`
+                <tr>
+                <td>其他选项</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                </tr>`).appendTo(table);
+        let ocl = ootr.children().last();
+        let mergebut = $(`<button training-list-view>加入题单</button>`).appendTo(ocl);
+        let mergeinput = $(`<input type="file" style="display: none;" accept=".json">`).appendTo(ocl);
+        $(`<span style="width: 1em; display: inline-block;"></span>`).insertAfter(mergebut);
+        let changebut = $(`<button training-delete>替换题单</button>`).appendTo(ocl);
+        let changeinput = $(`<input type="file" style="display: none;" accept=".json">`).appendTo(ocl);
+        $(`<span style="width: 1em; display: inline-block;"></span>`).insertAfter(changebut);
+        let dabut = $(`<button training-download>获取完整链接</button>`).appendTo(ocl);
+        dabut.on("click", () => {
+            let blob = new Blob([JSON.stringify(trainingfuncs.trainings)], {
+                type: "application/json"
+            });
+            let url = URL.createObjectURL(blob);
+            dabut.hide();
+            let a = $(`<a target="_blank" href="${url}" training-download download="LTTrainings_All.json">下载链接</a>`).appendTo(ocl);
+            a.on("click", () => {
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    dabut.show();
+                    a.remove();
+                }, 500);
+            });
+        });
+        mergebut.on("click", () => {
+            alert("请选择由 Luogu Tracker 下载的题单文件。若文件无效，则保持原样，不会合并。");
+            mergeinput.trigger("click");
+        });
+        mergeinput[0].addEventListener("change", function () {
+            /**
+             * @type {File}
+             */
+            let file = this.files[0];
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                let newtraining = trainingfuncs.check_training(e.target.result);
+                if (newtraining != null) {
+                    trainingfuncs.trainings = trainingfuncs.trainings.concat(newtraining);
+                    localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
+                    trainingfuncs.load_list();
+                }
+                else {
+                    alert("题单格式不正确。请选择 Luogu Tracker 下载的题单文件。");
+                }
+            };
+            reader.readAsText(file);
+        });
+        changebut.on("click", () => {
+            let texts = [
+                "请选择由 Luogu Tracker 下载的题单文件。若文件无效，则保持原样。\n注意：此功能为替换，原来的题单信息会丢失！",
+                "你确定要替换题单吗？如果你只想添加、导入题单，请选择合并题单。",
+                "请注意，这样做会永久失去原有的题单信息。"
+            ];
+            for (let i = 0; i < 3; i++) {
+                if (!confirm(texts[i])) {
+                    return;
+                }
+            }
+            changeinput.trigger("click");
+        });
+        changeinput[0].addEventListener("change", function () {
+            /**
+             * @type {File}
+             */
+            let file = this.files[0];
+            let reader = new FileReader();
+            reader.onload = (e) => {
+                let newtraining = trainingfuncs.check_training(e.target.result);
+                if (newtraining != null) {
+                    trainingfuncs.trainings = newtraining;
+                    localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
+                    trainingfuncs.load_list();
+                }
+                else {
+                    alert("题单格式不正确。请选择 Luogu Tracker 下载的题单文件。");
+                }
+            };
+            reader.readAsText(file);
+        });
+    },
+    /**
+     * @param {number} tid
+     */
+    load_view(tid) {
+        trainingfuncs.clear_div();
+        trainingfuncs.viewdiv.removeAttr("training-hide");
+        let training = trainingfuncs.trainings[tid];
+        let nameinput = $("#training-name");
+        let sourceinput = $("#training-source");
+        let notesinput = $("#training-notes");
+        let dateinput = $("#training-date");
+        let commentarea = $("#training-comment");
+        let table = $("#training-view-area");
+        let backbut = $("#training-view-back");
+        backbut.off("click");
+        let deletebut = $("#training-view-delete");
+        deletebut.off("click");
+        let savebut = $("#training-view-save");
+        savebut.off("click");
+        let downloadbut = $("#training-view-download");
+        downloadbut.off("click");
+        /**
+         * @type {HTMLAnchorElement}
+         */
+        let downloada = $("#training-download-a")[0];
+        nameinput.val(training.name);
+        sourceinput.val(training.source);
+        notesinput.val(training.notes);
+        dateinput.val(training.date);
+        commentarea.val(training.comment);
+        $(`<tr pbs-head><td>题目链接</td><td>备注</td></tr>`).appendTo(table);
+        let cu = Number(localStorage.getItem("currentUser"));
+        for (let prob of training.problems) {
+            let probinfo = trainingfuncs.get_prob(prob.pid);
+            if (probinfo == null) {
+                continue;
+            }
+            let probrow = $(`<tr></tr>`).appendTo(table);
+            let { dif, pid, tit } = probinfo;
+            if (tit.length > 50) {
+                tit = tit.slice(0, 47) + "...";
+            }
+            let sta = "";
+            if (cu) {
+                if (ac_data[cu].accepted.find(p => p == pid)) {
+                    sta = "pbs-ac";
+                }
+                if (ac_data[cu].submitted.find(p => p == pid)) {
+                    sta = "pbs-sb";
+                }
+            }
+            lpfuncs.rp(sta, pid, tit, dif).appendTo(probrow);
+            $(`<td><textarea>${prob.comment}</textarea></td>`).appendTo(probrow);
+            probrow.appendTo(table);
+        }
+        let createtr = $(`<tr></tr>`).appendTo(table);
+        let pidtd = $(`<textarea input-pid></textarea>`).appendTo($(`<td></td>`).appendTo(createtr));
+        let createbut = $(`<button create-pid training-list-view>添加题目</button>`).appendTo($(`<td></td>`).appendTo(createtr));
+        createbut.on("click", () => {
+            let val = pidtd.val().split(/,[\s]*/);
+            let sucpid = [], exipid = [], errpid = [];
+            let tc = table.children().not(":first").not(":last");
+            for (let pid of val) {
+                if (!trainingfuncs.check_prob(pid)) {
+                    errpid.push(pid);
+                    continue;
+                }
+                if (sucpid.indexOf(pid) != -1 || exipid.indexOf(pid) != -1) {
+                    exipid.push(pid);
+                    continue;
+                }
+                let ok = true;
+                for (let i = 0; i < tc.length; i++) {
+                    if (tc[i].children[0].children[0].children[0].innerText == pid) {
+                        exipid.push(pid);
+                        ok = false;
+                        break;
+                    }
+                }
+                if (ok) {
+                    sucpid.push(pid);
+                }
+            }
+            let res = confirm(`下列题目将被加入题单：
+${sucpid.join(",  ")}
+下列题目已经进入题单，不再添加：
+${exipid.join(",  ")}
+下列题目未找到：
+${errpid.join(",  ")}
+请确认是否添加。`);
+            if (res) {
+                for (let pid of sucpid) {
+                    let probinfo = trainingfuncs.get_prob(pid);
+                    if (probinfo == null) {
+                        continue;
+                    }
+                    let probrow = $(`<tr></tr>`).appendTo(table);
+                    let { dif, tit } = probinfo;
+                    if (tit.length > 50) {
+                        tit = tit.slice(0, 47) + "...";
+                    }
+                    let sta = "";
+                    if (cu) {
+                        if (ac_data[cu].accepted.find(p => p == pid)) {
+                            sta = "pbs-ac";
+                        }
+                        if (ac_data[cu].submitted.find(p => p == pid)) {
+                            sta = "pbs-sb";
+                        }
+                    }
+                    lpfuncs.rp(sta, pid, tit, dif).appendTo(probrow);
+                    $(`<td><textarea></textarea></td>`).appendTo(probrow);
+                    probrow.insertBefore(createtr);
+                }
+            }
+        });
+        backbut.on("click", () => {
+            if (confirm("确认要退出？此操作不会保存更改！")) {
+                trainingfuncs.load_list();
+            }
+        });
+        deletebut.on("click", () => {
+            let res = true;
+            let texts = [
+                "你确定要删除这个题单吗？(1/3)",
+                "删除后无法找回哦！真的没有办法！(2/3)",
+                "最后再确认一遍，以免你误触两次。你将永远失去这个题单！(3/3)"
+            ];
+            for (let i = 0; i < 3; i++) {
+                if (!confirm(texts[i])) {
+                    res = false;
+                    break;
+                }
+            }
+            if (res) {
+                trainingfuncs.trainings.splice(tid, 1);
+                localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
+                trainingfuncs.load_list();
+            }
+        });
+        savebut.on("click", () => {
+            /**
+             * @type {Training}
+             */
+            let newtraining = {
+                name: nameinput.val(),
+                source: sourceinput.val(),
+                notes: notesinput.val(),
+                date: dateinput.val(),
+                comment: commentarea.val(),
+                problems: []
+            };
+            let tc = table.children().not(":first").not(":last");
+            for (let td of tc) {
+                newtraining.problems.push({
+                    pid: td.children[0].children[0].children[0].innerText,
+                    comment: td.children[1].children[0].value
+                });
+            }
+            training = trainingfuncs.trainings[tid] = newtraining;
+            localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
+            alert("保存成功");
+        });
+        downloadbut.on("click", () => {
+            savebut.trigger("click");
+            let blob = new Blob([JSON.stringify([training])], {
+                type: "application/json"
+            });
+            let url = URL.createObjectURL(blob);
+            downloada.href = url;
+            downloada.download = `LTTraining_${training.name.replaceAll('"', '""')}-By-${training.source.replaceAll('"', '""')}_${training.date.replaceAll('"', '""')}.json`;
+            downloada.click();
+            setTimeout(() => {
+                URL.revokeObjectURL(blob);
+            }, 500);
+        });
+    }
+}
+
+/**
+ * 
+ * @param {JQuery<HTMLElement>} main
+ */
+function load_training(main) {
+    return function () {
+        console.log("training");
+        main.empty();
+        main.attr("current-page", "training-page");
+        $.get("/training.html", (data) => {
+            let inner = $(data);
+            inner.appendTo(main);
+            let listdiv = $("*[training-select]");
+            let viewdiv = $("*[training-view]");
+            if (!localStorage.getItem("trainings")) {
+                localStorage.setItem("trainings", "[]");
+            }
+            /**
+             * @type {Training[]}
+             */
+            let trainings = JSON.parse(localStorage.getItem("trainings"));
+            trainingfuncs.listdiv = listdiv;
+            trainingfuncs.viewdiv = viewdiv;
+            trainingfuncs.trainings = trainings;
+            trainingfuncs.load_list(listdiv, viewdiv, trainings);
+        });
+    }
+}
+
 $(() => {
     if (!localStorage.getItem("currentUser")) {
         localStorage.setItem("currentUser", 1);
@@ -576,6 +1037,10 @@ $(() => {
     pbs_type.forEach(t => {
         $.get(`/${t}.json`, res => {
             pbs_data[t] = JSON.parse(res);
+            pbs_map[t] = {};
+            for (let prob of pbs_data[t]) {
+                pbs_map[t][prob.pid] = prob;
+            }
             counter.count();
             if (t == "at") {
                 pbs_data.at.forEach(p => {
@@ -595,6 +1060,7 @@ $(() => {
     $("*[side-login]").on("click", load_login(main));
     $("*[side-update]").on("click", load_prob(main));
     $("*[side-pbs]").on("click", load_pbs(main));
+    $("*[side-training]").on("click", load_training(main));
     pbs_type.forEach(t => {
         $(`*[side-${t}]`).on("click", () => {
             localStorage.setItem("currentPbs", t);

@@ -1,0 +1,44 @@
+<div style="height: 1em"></div>
+<div flex-wrap>
+    <span head>题单</span>
+</div>
+<div training-select>
+    <table training-list>
+        <tr training-head>
+            <td>创建日期</td>
+            <td>题单名称</td>
+            <td>来源</td>
+            <td>备注</td>
+            <td>题数</td>
+            <td>操作</td>
+        </tr>
+    </table>
+</div>
+<div style="height: 2em"></div>
+<div training-hide training-view horizontal-flex-wrap>
+    <input id="training-name" input-head value="Training Name">
+    <div style="height: 0.5em"></div>
+    <input id="training-source" input-subtitle value="Training Source">
+    <div style="height: 0.5em"></div>
+    <input id="training-notes" input-subtitle value="Training Notes">
+    <div style="height: 0.5em"></div>
+    <input id="training-date" input-subtitle value="Training Date">
+    <div style="height: 1em"></div>
+    <div flex-wrap horizontal-fill>
+        <textarea id="training-comment">Training Comment</textarea>
+        <span style="width: 1em; display: inline-block;"></span>
+        <table id="training-view-area"></table>
+    </div>
+    <div style="height: 1em"></div>
+    <div flex-wrap>
+        <button id="training-view-back" training-back>返回</button>
+        <span style="width: 1em; display: inline-block;"></span>
+        <button id="training-view-delete" training-delete>删除</button>
+        <span style="width: 1em; display: inline-block;"></span>
+        <button id="training-view-save" training-list-view>保存</button>
+        <span style="width: 1em; display: inline-block;"></span>
+        <button id="training-view-download" training-download>下载</button>
+        <a id="training-download-a" target="_blank" style="display: none"></a>
+    </div>
+</div>
+<div comment flex-wrap>所有题单均存储于 LocalStorage。</div>

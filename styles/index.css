@@ -36,6 +36,25 @@
     justify-content: center;
 }
 
+*[head] {
+    text-align: center;
+    border: 1px solid var(--main-brd);
+    border-radius: 1em;
+    padding: 1em 3em;
+    font-weight: bold;
+    font-size: larger;
+}
+
+*[horizontal-fill] {
+    width: 100%;
+}
+
+*[horizontal-flex-wrap] {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center space-between;
+}
+
 *[input] {
     padding: 1em;
     background-color: var(--sidebar-bg-color);
@@ -44,13 +63,15 @@
     color: var(--darker-font);
 }
 
-*[head] {
-    text-align: center;
-    border: 1px solid var(--main-brd);
-    border-radius: 1em;
-    padding: 1em 3em;
+*[input-head] {
+    font-size: large;
     font-weight: bold;
-    font-size: larger;
+}
+
+*[inline-input] {
+    width: 90%;
+    height: 90%;
+    display: inline-block;
 }
 
 *[pbs-ac] {
@@ -159,6 +180,16 @@
     border: 1px solid var(--main-bg);
 }
 
+*[row-but-single] {
+    padding: 0.5em 1em;
+    background-color: var(--main-bg);
+    color: var(--lighter-font);
+    height: 1.5em;
+    line-height: 1.5em;
+    border-radius: 1em 1em 1em 1em;
+    border: 1px solid var(--main-bg);
+}
+
 *[row-inp-first] {
     padding: 0.5em 1em;
     color: var(--darker-font);
@@ -233,6 +264,11 @@
     vertical-align: middle;
 }
 
+*[side-training] {
+    line-height: 3em;
+    height: 3em;
+}
+
 *[side-txt] {
     vertical-align: middle;
     display: inline-block;
@@ -242,6 +278,42 @@
 *[side-update] {
     line-height: 3em;
     height: 3em;
+}
+
+*[training-back] {
+    background-color: var(--warning-yellow);
+}
+
+*[training-delete] {
+    background-color: var(--danger-red);
+}
+
+*[training-download] {
+    background-color: var(--info-cyan);
+    display: inline;
+    border-width: 2px;
+    border-color: black;
+    padding-block: 1px;
+    padding-inline: 6px;
+}
+
+*[training-head] {
+    background-color: var(--sidebar-btn-brd);
+    font-weight: bold;
+}
+
+*[training-hide] {
+    display: none;
+}
+
+*[training-list] {
+    width: 100%;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+*[training-list-view] {
+    background-color: var(--pro-green);
 }
 
 *[uid] {
@@ -323,4 +395,7 @@ td {
     --main-bg: rgb(75, 76, 87);
     --ac-green: rgba(40, 255, 40, 0.5);
     --sb-yellow: rgba(246, 246, 0, 0.5);
+    --danger-red: rgb(243, 69, 69);
+    --info-cyan: rgb(56, 215, 243);
+    --warning-yellow: rgb(235, 171, 44);
 }
