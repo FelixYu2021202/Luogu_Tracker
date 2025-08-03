@@ -850,7 +850,7 @@ let trainingfuncs = {
         notesinput.val(training.notes);
         dateinput.val(training.date);
         commentarea.val(training.comment);
-        $(`<tr pbs-head><td>题目链接</td><td>备注</td></tr>`).appendTo(table);
+        $(`<tr pbs-head><td>题目链接</td><td>备注</td><td>操作</td></tr>`).appendTo(table);
         let cu = Number(localStorage.getItem("currentUser"));
         for (let prob of training.problems) {
             let probinfo = trainingfuncs.get_prob(prob.pid);
@@ -872,14 +872,19 @@ let trainingfuncs = {
                 }
             }
             lpfuncs.rp(sta, pid, tit, dif).appendTo(probrow);
-            $(`<td><textarea>${prob.comment}</textarea></td>`).appendTo(probrow);
-            probrow.appendTo(table);
+            $(`<td><textarea id="problem-comment-${pid}">${prob.comment}</textarea></td>`).appendTo(probrow);
+            let delbut = $(`<button training-delete>删除题目</button>`).appendTo($(`<td></td>`).appendTo(probrow));
+            delbut.on("click", function () {
+                this.parentElement.parentElement.remove();
+            });
         }
         let createtr = $(`<tr></tr>`).appendTo(table);
         let pidtd = $(`<textarea input-pid></textarea>`).appendTo($(`<td></td>`).appendTo(createtr));
+        let pidcomment = $(`<textarea input-comment></textarea>`).appendTo($(`<td></td>`).appendTo(createtr));
         let createbut = $(`<button create-pid training-list-view>添加题目</button>`).appendTo($(`<td></td>`).appendTo(createtr));
         createbut.on("click", () => {
             let val = pidtd.val().split(/,[\s]*/);
+            let comment = pidcomment.val();
             let sucpid = [], exipid = [], errpid = [];
             let tc = table.children().not(":first").not(":last");
             for (let pid of val) {
@@ -931,7 +936,11 @@ ${errpid.join(",  ")}
                         }
                     }
                     lpfuncs.rp(sta, pid, tit, dif).appendTo(probrow);
-                    $(`<td><textarea></textarea></td>`).appendTo(probrow);
+                    $(`<td><textarea id="problem-comment-${pid}">${comment}</textarea></td>`).appendTo(probrow);
+                    let delbut = $(`<button training-delete>删除题目</button>`).appendTo($(`<td></td>`).appendTo(probrow));
+                    delbut.on("click", function () {
+                        this.parentElement.parentElement.remove();
+                    });
                     probrow.insertBefore(createtr);
                 }
             }
