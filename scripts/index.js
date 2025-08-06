@@ -642,10 +642,15 @@ let trainingfuncs = {
             return null;
         }
     },
+    /**
+     * 
+     */
+    save() { },
     clear_div() {
         $("#training-view-area").children().remove();
         trainingfuncs.listdiv.children().children().children().not(":first").remove();
         trainingfuncs.viewdiv.attr("training-hide", "");
+        trainingfuncs.viewdiv.trigger("rem");
         trainingfuncs.listdiv.attr("training-hide", "");
     },
     load_list() {
@@ -969,7 +974,7 @@ ${errpid.join(",  ")}
                 trainingfuncs.load_list();
             }
         });
-        savebut.on("click", () => {
+        function save() {
             /**
              * @type {Training}
              */
@@ -991,9 +996,9 @@ ${errpid.join(",  ")}
             training = trainingfuncs.trainings[tid] = newtraining;
             localStorage.setItem("trainings", JSON.stringify(trainingfuncs.trainings));
             alert("保存成功");
-        });
-        downloadbut.on("click", () => {
-            savebut.trigger("click");
+        }
+        function download() {
+            save();
             let blob = new Blob([JSON.stringify([training])], {
                 type: "application/json"
             });
@@ -1004,6 +1009,28 @@ ${errpid.join(",  ")}
             setTimeout(() => {
                 URL.revokeObjectURL(blob);
             }, 500);
+        }
+        savebut.on("click", save);
+        downloadbut.on("click", download);
+        /**
+         * @param {KeyboardEvent} ev
+         */
+        function eventHandler(ev) {
+            if (ev.code == "KeyS" && ev.ctrlKey && !ev.shiftKey && !ev.altKey) {
+                ev.preventDefault();
+                save();
+                return;
+            }
+            if (ev.code == "KeyS" && ev.ctrlKey && ev.shiftKey && !ev.altKey) {
+                ev.preventDefault();
+                download();
+                return;
+            }
+        }
+        document.body.addEventListener("keydown", eventHandler);
+        trainingfuncs.viewdiv.on("rem", () => {
+            trainingfuncs.viewdiv.off("rem");
+            document.body.removeEventListener("keydown", eventHandler);
         });
     }
 }
