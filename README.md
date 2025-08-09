@@ -1,6 +1,10 @@
 # Luogu Tracker by cosf
 
-> Last update: 2025.8.3
+> Current Version: v1.5.3-1
+>
+> Last update: 2025.8.9
+>
+> Last problemset update: 25.8.9
 >
 > Author: cosf
 
@@ -22,9 +26,13 @@
 npm install
 ```
 
-### 3. *更改服务器地址
+### 3. 更改服务器地址
 
 如需想要支持局域网，可以将 `./data/ports.json` 里的 `ip` 一项改成你的本机 ip。
+
+你也可以更改服务器端口。`serverPort` 是网站的端口，默认值为 `5176`。`socketPort` 是交互用的端口，默认值为 `51672`。
+
+如果无法正常运行 Luogu Tracker，请检查地址和端口是否配置正确，包括是否与其他软件冲突。
 
 ### 4. 运行服务器
 
@@ -44,9 +52,19 @@ npm start
 [Time Stamp] Url Ref
 ```
 
+每一次爬取记录同样会被记录，格式：
+
+```log
+Problemset Max-Page Current-Page
+```
+
+这些日志同时会显示于服务器的命令行。若不想将日志保存，可将 `logs/` 文件夹删除*。
+
 ## 使用方法
 
 ### 打开[网页](http://localhost:5167/)
+
+如果你对服务器网址和端口进行了更改，请以更改后的链接为准：`http://<ip>:<serverPort>/`。
 
 ### 侧边栏
 
@@ -98,4 +116,6 @@ npm start
 
 ## 注释
 
-\* 所有链接均设置 `target="_blank"`，点击后会跳转，即新建页面打开内容。
+\* 暂不支持设置开关。
+
+\*\* 所有链接均设置 `target="_blank"`，点击后会跳转，即新建页面打开内容。
