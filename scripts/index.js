@@ -682,9 +682,9 @@ let trainingfuncs = {
             deletebut.on("click", () => {
                 let res = true;
                 let texts = [
-                    "你确定要删除这个题单吗？(1/3)",
-                    "删除后无法找回哦！真的没有办法！(2/3)",
-                    "最后再确认一遍，以免你误触两次。你将永远失去这个题单！(3/3)"
+                    `你确定要删除这个题单（${training.name}）吗？(1/3)`,
+                    "删除后无法找回哦！里面的备注、笔记都将消失！真的没有办法！(2/3)",
+                    `最后再确认一遍，以免你误触两次。你将永远失去这个题单（${training.name}）！(3/3)`
                 ];
                 for (let i = 0; i < 3; i++) {
                     if (!confirm(texts[i])) {
@@ -760,7 +760,8 @@ let trainingfuncs = {
             });
             let url = URL.createObjectURL(blob);
             dabut.hide();
-            let a = $(`<a target="_blank" href="${url}" training-download download="LTTrainings_All.json">下载链接</a>`).appendTo(ocl);
+            let now = new Date();
+            let a = $(`<a target="_blank" href="${url}" training-download download="LTTrainings_All_${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}.json">下载链接</a>`).appendTo(ocl);
             a.on("click", () => {
                 setTimeout(() => {
                     URL.revokeObjectURL(url);
@@ -858,7 +859,7 @@ let trainingfuncs = {
         $(`<tr pbs-head><td>题目链接</td><td>备注</td><td>操作</td></tr>`).appendTo(table);
         let cu = Number(localStorage.getItem("currentUser"));
         for (let prob of training.problems) {
-            let probinfo = trainingfuncs.get_prob(prob.pid);
+            let probinfo = trainingfuncs.get_prob(prob.pid.replaceAll(/\s/g, ""));
             if (probinfo == null) {
                 continue;
             }
@@ -888,11 +889,15 @@ let trainingfuncs = {
         let pidcomment = $(`<textarea input-comment></textarea>`).appendTo($(`<td></td>`).appendTo(createtr));
         let createbut = $(`<button create-pid training-list-view>添加题目</button>`).appendTo($(`<td></td>`).appendTo(createtr));
         createbut.on("click", () => {
-            let val = pidtd.val().split(/,[\s]*/);
+            let val = pidtd.val().split(/[,，\n]/);
             let comment = pidcomment.val();
             let sucpid = [], exipid = [], errpid = [];
             let tc = table.children().not(":first").not(":last");
             for (let pid of val) {
+                pid = pid.replaceAll(/\s/g, "");
+                if (pid == "") {
+                    continue;
+                }
                 if (!trainingfuncs.check_prob(pid)) {
                     errpid.push(pid);
                     continue;
@@ -958,9 +963,9 @@ ${errpid.join(",  ")}
         deletebut.on("click", () => {
             let res = true;
             let texts = [
-                "你确定要删除这个题单吗？(1/3)",
-                "删除后无法找回哦！真的没有办法！(2/3)",
-                "最后再确认一遍，以免你误触两次。你将永远失去这个题单！(3/3)"
+                `你确定要删除这个题单（${training.name}）吗？(1/3)`,
+                "删除后无法找回哦！里面的备注、笔记都将消失！真的没有办法！(2/3)",
+                `最后再确认一遍，以免你误触两次。你将永远失去这个题单（${training.name}）！(3/3)`
             ];
             for (let i = 0; i < 3; i++) {
                 if (!confirm(texts[i])) {
@@ -989,7 +994,7 @@ ${errpid.join(",  ")}
             let tc = table.children().not(":first").not(":last");
             for (let td of tc) {
                 newtraining.problems.push({
-                    pid: td.children[0].children[0].children[0].innerText,
+                    pid: td.children[0].children[0].children[0].innerText.replaceAll(/\s/g, ""),
                     comment: td.children[1].children[0].value
                 });
             }
